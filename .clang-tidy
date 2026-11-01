@@ -1,0 +1,124 @@
+---
+# .clang-tidy — Linux Embedded C Project
+#
+# Target: Linux Embedded C (C11/C17), bare-metal or POSIX environment
+# Toolchain: GCC / Clang cross-compiler
+#
+# Usage:
+#   clang-tidy --extra-arg=-std=c17 /path/to/source/file.c
+#   Or via CMake with -DCMAKE_C_CLANG_TIDY="clang-tidy;--extra-arg=-std=c17"
+#
+# Notes:
+#   - C++ specific checks are disabled (modernize-*, fuchsia-*, etc.)
+#   - MISRA-aligned checks are enabled where applicable via cert-* and bugprone-*
+#   - Embedded-specific considerations: no dynamic allocation warnings, register usage, etc.
+
+Checks: '
+  clang-analyzer-*,
+
+  bugprone-*,
+  -bugprone-easily-swappable-parameters,
+  -bugprone-macro-parentheses,
+
+  cert-*,
+  -cert-dcl37-c,
+  -cert-dcl51-cpp,
+
+  concurrency-*,
+
+  linuxkernel-*,
+
+  misc-*,
+  -misc-non-private-member-variables-in-classes,
+  -misc-unused-parameters,
+
+  performance-*,
+
+  portability-*,
+  -portability-restrict-system-includes,
+
+  readability-*,
+  -readability-function-cognitive-complexity,
+  -readability-identifier-length,
+  -readability-magic-numbers,
+  -readability-isolate-declaration,
+
+  -modernize-*,
+  -fuchsia-*,
+  -google-*,
+  -hicpp-*,
+  -cppcoreguidelines-*,
+  -abseil-*,
+  -altera-*,
+  -boost-*,
+  -darwin-*,
+  -llvmlibc-*,
+  -mpi-*,
+  -objc-*,
+  -openmp-*,
+  -zircon-*,
+  -android-*,
+'
+
+WarningsAsErrors: ''
+
+# Only lint headers inside the project
+HeaderFilterRegex: '(feature|interface)/.*\.(h|H)$'
+
+AnalyzeTemporaryDtors: false
+
+# Let clang-format handle formatting separately
+FormatStyle: file
+
+User: ''
+
+CheckOptions:
+  # Allow positive integer literals in signed bitwise ops (common in embedded bitmasks)
+  - key: hicpp-signed-bitwise.IgnorePositiveIntegerLiterals
+    value: 'true'
+
+  # Naming convention: snake_case for functions and variables (Linux kernel style)
+  - key: readability-identifier-naming.FunctionCase
+    value: 'lower_case'
+  - key: readability-identifier-naming.VariableCase
+    value: 'lower_case'
+  - key: readability-identifier-naming.ParameterCase
+    value: 'lower_case'
+  - key: readability-identifier-naming.GlobalVariableCase
+    value: 'lower_case'
+  - key: readability-identifier-naming.LocalVariableCase
+    value: 'lower_case'
+
+  # Macros and constants: UPPER_CASE (C convention)
+  - key: readability-identifier-naming.MacroDefinitionCase
+    value: 'UPPER_CASE'
+  - key: readability-identifier-naming.EnumConstantCase
+    value: 'UPPER_CASE'
+  - key: readability-identifier-naming.GlobalConstantCase
+    value: 'UPPER_CASE'
+
+  # Typedefs: allow snake_case with _t suffix (POSIX/Linux convention)
+  - key: readability-identifier-naming.TypedefCase
+    value: 'lower_case'
+  - key: readability-identifier-naming.TypedefSuffix
+    value: '_t'
+
+  # Struct type names: snake_case
+  - key: readability-identifier-naming.StructCase
+    value: 'lower_case'
+
+  # Enum type names: snake_case
+  - key: readability-identifier-naming.EnumCase
+    value: 'lower_case'
+
+  # Suppress magic number warnings for common embedded constants
+  - key: readability-magic-numbers.IgnoredIntegerValues
+    value: '0;1;2;4;8;16;32;64;128;255;256;512;1024'
+
+  # Bugprone: allow assert() macros without side effects check
+  - key: bugprone-assert-side-effect.AssertMacros
+    value: 'assert,ASSERT,BUG_ON'
+
+  # Allow use of unsigned types in loops (common in embedded)
+  - key: cert-int09-c.AllowIntegerTypes
+    value: 'true'
